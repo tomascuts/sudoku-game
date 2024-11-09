@@ -3,7 +3,7 @@ import { Box, Button } from '@mui/material'
 
 export default function ControlPanel({ onNewGame, onCheckSolution, onSolveBacktracking, onSolveBranchAndBound, onClearSolution, onResetGame }) {
   return (
-    <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
+    <Box sx={{ mt: 4, display: 'flex', flexWrap: 'wrap', gap: 3, justifyContent: 'center' }}>
       <Button variant="contained" onClick={onNewGame}>
         Nuevo juego
       </Button>
