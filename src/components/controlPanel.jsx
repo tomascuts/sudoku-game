@@ -20,7 +20,7 @@ export default function ControlPanel({ onNewGame, onCheckSolution, onSolveBacktr
         Borrar solución
       </Button>
       <Button variant="outlined" onClick={onResetGame}>
-        Nuevo juego / Modo
+        Nuevo Modo
       </Button>
     </Box>
   )

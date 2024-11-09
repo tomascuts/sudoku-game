@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { ThemeProvider, createTheme, Box, Typography } from '@mui/material'
+import { ThemeProvider, createTheme, Box, Typography,CssBaseline  } from '@mui/material'
 import Board from './board'
 import ControlPanel from './controlPanel'
 import DifficultySelector from './difficultySelector'
@@ -8,7 +8,35 @@ import CustomTemplateInput from './customTemplateInput'
 import { createEmptyBoard, solveSudoku, solveSudokuBranchAndBound, isValid } from './utils'
 
 
-const theme = createTheme()
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#3f51b5',
+    },
+    secondary: {
+      main: '#f50057',
+    },
+    background: {
+      default: '#f0f4f8',
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+        },
+      },
+    },
+  },
+})
 
 export default function SudokuGame() {
   const [board, setBoard] = useState(createEmptyBoard())
@@ -182,47 +210,92 @@ export default function SudokuGame() {
 
   return (
     <ThemeProvider theme={theme}>
-      <Box sx={{ maxWidth: 600, margin: 'auto', mt: 4 }}>
-        <Typography variant="h4" align="center" gutterBottom>
-          Juego de Sudoku
-        </Typography>
-        {!showGrid && !showCustomInput ? (
-          <DifficultySelector
-            gameMode={gameMode}
-            onGameModeChange={handleGameModeChange}
-            onStartGame={() => setShowGrid(true)}
-          />
-        ) : showCustomInput ? (
-          <CustomTemplateInput onSubmit={handleCustomTemplateSubmit} />
-        ) : (
-          <>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6">
-                {gameMode === 'custom' ? 'Template personalizado' : 
-                                         `Dificultad: ${difficulty === 'easy' ? 'Fácil' :
-                                         difficulty === 'medium' ? 'Media' : 'Difícil'}
-                  (${difficulty === 'easy' ? '35-50' : difficulty === 'medium' ? '22-34' : '10-21'} números iniciales)`
-                }
-              </Typography>
-            </Box>
-            <Board
-              board={board}
-              initialBoard={initialBoard}
-              invalidCells={invalidCells}
-              onCellChange={handleCellChange}
+      <CssBaseline />
+      <Box
+        sx={{
+          minHeight: "100vh",
+          background: "linear-gradient(45deg, #2980b9 30%, #2c3e50 90%)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 3,
+        }}
+      >
+        <Box
+          sx={{
+            backgroundColor: "background.paper",
+            borderRadius: 4,
+            padding: 4,
+            boxShadow: 3,
+            maxWidth: 1000,
+            width: "100%",
+          }}
+        >
+          <Typography variant="h4" align="center" gutterBottom>
+            Juego de Sudoku
+          </Typography>
+          {!showGrid && !showCustomInput ? (
+            <DifficultySelector
+              gameMode={gameMode}
+              onGameModeChange={handleGameModeChange}
+              onStartGame={() => setShowGrid(true)}
             />
-            <ControlPanel
-              onNewGame={newGame}
-              onCheckSolution={checkSolution}
-              onSolveBacktracking={() => solvePuzzle('backtracking')}
-              onSolveBranchAndBound={() => solvePuzzle('branchAndBound')}
-              onClearSolution={clearSolution}
-              onResetGame={resetGame}
-            />
-            <StatusMessage status={status} solveTime={solveTime} algorithmUsed={algorithmUsed} />
-          </>
-        )}
+          ) : showCustomInput ? (
+            <CustomTemplateInput onSubmit={handleCustomTemplateSubmit} />
+          ) : (
+            <>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mb: 2,
+                }}
+              >
+                <Typography variant="h6">
+                  {gameMode === "custom"
+                    ? "Template personalizado"
+                    : `Dificultad: ${
+                        difficulty === "easy"
+                          ? "Fácil"
+                          : difficulty === "medium"
+                          ? "Media"
+                          : "Difícil"
+                      }
+                    (${
+                      difficulty === "easy"
+                        ? "35-50"
+                        : difficulty === "medium"
+                        ? "22-34"
+                        : "10-21"
+                    } números iniciales)`}
+                </Typography>
+              </Box>
+              <Board
+                board={board}
+                initialBoard={initialBoard}
+                invalidCells={invalidCells}
+                onCellChange={handleCellChange}
+              />
+              <ControlPanel
+                onNewGame={newGame}
+                onCheckSolution={checkSolution}
+                onSolveBacktracking={() => solvePuzzle("backtracking")}
+                onSolveBranchAndBound={() => solvePuzzle("branchAndBound")}
+                onClearSolution={clearSolution}
+                onResetGame={resetGame}
+              />
+              <StatusMessage
+                status={status}
+                solveTime={solveTime}
+                algorithmUsed={algorithmUsed}
+              />
+            </>
+          )}
+        </Box>
       </Box>
     </ThemeProvider>
-  )
+  );
+  
 }
