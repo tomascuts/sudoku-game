@@ -14,7 +14,7 @@ export default function ControlPanel({ onNewGame, onCheckSolution, onSolveBacktr
         Resolver (Backtracking)
       </Button>
       <Button variant="contained" onClick={onSolveBranchAndBound}>
-        Resolver (R&A)
+        Resolver (B&B)
       </Button>
       <Button variant="contained" onClick={onClearSolution}>
         Borrar solución

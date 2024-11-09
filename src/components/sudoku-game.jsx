@@ -33,13 +33,18 @@ export default function SudokuGame() {
     }
   }, [gameMode, difficulty])
 
+  //Generamos un nuevo tablero segun la dificultad seleccionada o el tablero personalizado
   const newGame = (customBoard = null) => {
     let newBoard
+    
+    //tablero personalizado, clonamos ingresamos el custom donde se ingresaro los datos
     if (customBoard && Array.isArray(customBoard) && customBoard.length === 9 && customBoard.every(row => Array.isArray(row) && row.length === 9)) {
       newBoard = customBoard.map(row => [...row])
     } else {
+      //Tablero nuevo segun dificultad, se resuelve y se vacian celdas al azar. Para que el tablero tenga coherencia
       newBoard = createEmptyBoard()
       solveSudoku(newBoard)
+      // Usamos la formula (Math.random() * (max - min) + min) para generar un numero aleatorio dentro del rango.
       const cellsToFill = {
         easy: Math.floor(Math.random() * 16) + 35,
         medium: Math.floor(Math.random() * 13) + 22,
@@ -65,8 +70,11 @@ export default function SudokuGame() {
     setShowCustomInput(false)
   }
 
+  //Controlamos los cambios en las celdas. En cada cambio se actualiza el tablero. Se verifica si es incorrecto el valor.
   const handleCellChange = (row, col, value) => {
-    if (initialBoard[row][col] === '' && (value === '' || /^[1-9]$/.test(value))) {
+    if (initialBoard[row][col] === '' && 
+        (value === '' || /^[1-9]$/.test(value)) // el valor ingresado debe ser del 1 al 9
+    ) {
       const newBoard = board.map(r => [...r])
       newBoard[row][col] = value
       setBoard(newBoard)
@@ -78,6 +86,7 @@ export default function SudokuGame() {
         const isValidInput = isValid(newBoard, row, col, value)
         newInvalidCells[`${row}-${col}`] = !isValidInput
       }
+      //Recorremos filas y columnas verificando con el IsValid si es un valor correcto, caso contrario lo agregamos al InvalidCells state.
       for (let r = 0; r < 9; r++) {
         for (let c = 0; c < 9; c++) {
           if (newBoard[r][c] !== '' && !isValid(newBoard, r, c, newBoard[r][c])) {
@@ -91,6 +100,7 @@ export default function SudokuGame() {
     }
   }
 
+  //Comprobamos si el tablero actual es una solución correcta del Sudoku
   const checkSolution = () => {
     for (let row = 0; row < 9; row++) {
       for (let col = 0; col < 9; col++) {
@@ -100,13 +110,16 @@ export default function SudokuGame() {
         }
       }
     }
-    setStatus('¡Solución correcta!')
+    setStatus('Solución correcta!')
   }
 
+  // Resolvemos el sudoku segun el algoritmo seleccionado. (backtracking o branch & bound).
   const solvePuzzle = (algorithm) => {
     const startTime = performance.now()
     const solvedBoard = board.map(row => [...row])
     let solved
+
+    //Le pasamos una copia del tablero al algoritmo seleccionado para resolver el sudoku.
     if (algorithm === 'backtracking') {
       solved = solveSudoku(solvedBoard)
     } else {
@@ -115,17 +128,19 @@ export default function SudokuGame() {
     if (solved) {
       const endTime = performance.now()
       setBoard(solvedBoard)
-      setStatus(`¡Sudoku resuelto usando ${algorithm === 'backtracking' ? 'Backtracking' : 'Ramificación y Acotación'}!`)
+      setStatus(`Sudoku resuelto usando ${algorithm === 'backtracking' ? 'Backtracking' : 'Branch and Bound'}!`)
       setInvalidCells({})
       setSolveTime(endTime - startTime)
-      setAlgorithmUsed(algorithm === 'backtracking' ? 'Backtracking' : 'Ramificación y Acotación')
+      setAlgorithmUsed(algorithm === 'backtracking' ? 'Backtracking' : 'Branch and Bound')
     } else {
+      const endTime = performance.now()
       setStatus('No existe solución')
-      setSolveTime(null)
-      setAlgorithmUsed(null)
+      setSolveTime(endTime - startTime)
+      setAlgorithmUsed(algorithm === 'backtracking' ? 'Backtracking' : 'Branch and Bound')
     }
   }
 
+  //Establecemos el modo de juego segun la seleccion realizada al comienzo.
   const handleGameModeChange = (mode) => {
     if (mode.startsWith('play-')) {
       setGameMode('play')
@@ -135,6 +150,7 @@ export default function SudokuGame() {
     }
   }
 
+  //Restablecemos el juego al estado inicial, seteando los states en null
   const resetGame = () => {
     setGameMode(null)
     setShowGrid(false)
@@ -144,6 +160,8 @@ export default function SudokuGame() {
     setAlgorithmUsed(null)
   }
 
+
+  //Limpia la solucion, dejando solo el tablero con su template inicial.
   const clearSolution = () => {
     const clearedBoard = board.map((row, rowIndex) =>
       row.map((cell, colIndex) =>
@@ -157,6 +175,7 @@ export default function SudokuGame() {
     setAlgorithmUsed(null)
   }
 
+  //Setea el tablero custom personalizado por el usuario para comenzar a jugar 
   const handleCustomTemplateSubmit = (customBoard) => {
     newGame(customBoard)
   }
@@ -179,9 +198,11 @@ export default function SudokuGame() {
           <>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h6">
-                {gameMode === 'custom' ? 'Template personalizado' : `Dificultad: ${difficulty === 'easy' ? 'Fácil' : difficulty === 'medium' ? 'Media' : 'Difícil'} (${
-                  difficulty === 'easy' ? '35-50' : difficulty === 'medium' ? '22-34' : '10-21'
-                } números iniciales)`}
+                {gameMode === 'custom' ? 'Template personalizado' : 
+                                         `Dificultad: ${difficulty === 'easy' ? 'Fácil' :
+                                         difficulty === 'medium' ? 'Media' : 'Difícil'}
+                  (${difficulty === 'easy' ? '35-50' : difficulty === 'medium' ? '22-34' : '10-21'} números iniciales)`
+                }
               </Typography>
             </Box>
             <Board
