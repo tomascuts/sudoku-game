@@ -1,4 +1,4 @@
-# Sudoku Game with React
+# Sudoku utilizando React
 
 Este proyecto es un juego de Sudoku interactivo desarrollado en React. Permite a los usuarios jugar al Sudoku, validar los movimientos y resolver el tablero mediante algoritmos de **Backtracking** y **Branch & Bound**. También ofrece detalles sobre el rendimiento de cada método de resolución.
 
