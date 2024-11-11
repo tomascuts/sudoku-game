@@ -29,14 +29,19 @@ export const isValid = (board, row, col, num) => {
 //Usamos backtracking para resolver el sudoku. Reccorremos cada celda buscando celdas vacias.
 //Cuando encontramos una intentamos llenarlas con numeros del 1 al 9. Si el numero es valido lo coloca y vuelve a llamar a la funcion recursivamente.
 //Si no puede completarse, elimina el numero y continua probando con otro valor.
-export const solveSudoku = (board) => {
+export const solveSudoku = (board,counters = null) => {
+
+  if (counters) {
+    counters.setRecursionBTCount(counters.recursionBTCount++);
+  }
+
   for (let row = 0; row < 9; row++) {
     for (let col = 0; col < 9; col++) {
       if (board[row][col] === '') {
         for (let num = 1; num <= 9; num++) {
           if (isValid(board, row, col, num.toString())) {
             board[row][col] = num.toString()
-            if (solveSudoku(board)) {
+            if (solveSudoku(board,counters)) {
               return true
             }
             board[row][col] = ''
@@ -51,42 +56,56 @@ export const solveSudoku = (board) => {
   return true
 }
 
-//Usamos Branch&Bound para resolver el sudoku.
-//Buscamos una celda vacia usando findEmptyCell y obtenemos una lista de posibles valores para la celda con getPossibleValues.
+//Usamos Branch&Bound con una heuristica MRV (Minimun Remaining Value) para resolver el sudoku.
+//Heurística: Buscamos una celda vacia con menor numero de valores posibles usando findMostConstrainedEmptyCell y obtenemos una lista de posibles valores para la celda.
 //Si el valor actual permite continuar con el juego lo dejamos, sino borramos y probamos con el siguiente en la lista de posibles valores.
-export const solveSudokuBranchAndBound = (board) => {
-  const emptyCell = findEmptyCell(board)
-  if (!emptyCell) return true
+export const solveSudokuBranchAndBound = (board, counters) => {
+  counters.setRecursionBBCount(counters.recursionBBCount++);
 
-  const [row, col] = emptyCell
-  const possibleValues = getPossibleValues(board, row, col)
+  // Busca la celda más restringida
+  const bestEmptyCell = findMostConstrainedEmptyCell(board);
+  if (!bestEmptyCell) return true; // Si no hay celdas vacías, hemos encontrado una solución
 
-  for (const num of possibleValues) {
-    board[row][col] = num
-    if (solveSudokuBranchAndBound(board)) {
-      return true
-    }
-    board[row][col] = ''
+  const [row, col] = bestEmptyCell;
+  const possibleValues = getPossibleValues(board, row, col);
+
+  // Poda: Si no hay valores posibles para la celda, este camino es inválido
+  if (possibleValues.length === 0) {
+    return false;
   }
 
-  //Retornamos false si no tiene solucion.
-  return false
-}
+  //Asignamos cada valor posible
+  for (const num of possibleValues) {
+    board[row][col] = num;
+    if (solveSudokuBranchAndBound(board, counters)) {
+      return true;
+    }
+    counters.setEmptyAssignmentsBBCount(counters.emptyAssignmentsBBCount++);
+    board[row][col] = ''; // Si no es exitoso revierte la celda
+  }
+
+  return false; // No se encontró solución
+};
 
 
 //Busca la primer celda vacia y devuelve su posicion i,j.
-const findEmptyCell = (board) => {
+const findMostConstrainedEmptyCell = (board) => {
+  let minOptions = 10;
+  let bestCell = null;
+
   for (let row = 0; row < 9; row++) {
     for (let col = 0; col < 9; col++) {
       if (board[row][col] === '') {
-        return [row, col]
+        const possibleValues = getPossibleValues(board, row, col);
+        if (possibleValues.length < minOptions) {
+          minOptions = possibleValues.length;
+          bestCell = [row, col];
+        }
       }
     }
   }
-
-  //Retornamos null si no hay celdas vacias (es decir, el tablero esta completo).
-  return null
-}
+  return bestCell;
+};
 
 //generamos valores posibles del 1 al 9 que podrian colocarse en una celda, respetando las reglas del juego 
 //(validaciones identicas al is valid)
