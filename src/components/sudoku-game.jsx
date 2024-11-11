@@ -7,7 +7,6 @@ import StatusMessage from './statusMessage'
 import CustomTemplateInput from './customTemplateInput'
 import { createEmptyBoard, solveSudoku, solveSudokuBranchAndBound, isValid } from './utils'
 
-
 const theme = createTheme({
   palette: {
     primary: {
@@ -50,6 +49,11 @@ export default function SudokuGame() {
   const [algorithmUsed, setAlgorithmUsed] = useState(null)
   const [showCustomInput, setShowCustomInput] = useState(false)
 
+  //Counters
+  const [recursionBBCount, setRecursionBBCount] = useState(0)
+  const [recursionBTCount, setRecursionBTCount] = useState(0)
+  const [emptyAssignmentsBBCount, setEmptyAssignmentsBBCount] = useState(0)
+
   useEffect(() => {
     if (gameMode && gameMode !== 'custom') {
       newGame()
@@ -60,6 +64,15 @@ export default function SudokuGame() {
       setShowGrid(false)
     }
   }, [gameMode, difficulty])
+
+  const counterHandlers = {
+    recursionBBCount,
+    setRecursionBBCount,
+    emptyAssignmentsBBCount,
+    setEmptyAssignmentsBBCount,
+    recursionBTCount,
+    setRecursionBTCount
+  };
 
   //Generamos un nuevo tablero segun la dificultad seleccionada o el tablero personalizado
   const newGame = (customBoard = null) => {
@@ -141,18 +154,30 @@ export default function SudokuGame() {
     setStatus('Solución correcta!')
   }
 
+  const handleSolve = (algorithm,solvedBoard) => {
+    setRecursionBBCount(0);
+    setEmptyAssignmentsBBCount(0);
+    setRecursionBTCount(0);
+
+    let solved
+  
+    if (algorithm === 'backtracking') {
+      solved = solveSudoku(solvedBoard,counterHandlers)
+    } else {
+      solved = solveSudokuBranchAndBound(solvedBoard, counterHandlers)
+    }
+
+    return solved;
+  };
+
   // Resolvemos el sudoku segun el algoritmo seleccionado. (backtracking o branch & bound).
   const solvePuzzle = (algorithm) => {
-    const startTime = performance.now()
     const solvedBoard = board.map(row => [...row])
-    let solved
+    const startTime = performance.now()
 
     //Le pasamos una copia del tablero al algoritmo seleccionado para resolver el sudoku.
-    if (algorithm === 'backtracking') {
-      solved = solveSudoku(solvedBoard)
-    } else {
-      solved = solveSudokuBranchAndBound(solvedBoard)
-    }
+    let solved = handleSolve(algorithm,solvedBoard);
+   
     if (solved) {
       const endTime = performance.now()
       setBoard(solvedBoard)
@@ -191,6 +216,11 @@ export default function SudokuGame() {
 
   //Limpia la solucion, dejando solo el tablero con su template inicial.
   const clearSolution = () => {
+    setRecursionBBCount(0);
+    setEmptyAssignmentsBBCount(0);
+    setRecursionBTCount(0);
+
+
     const clearedBoard = board.map((row, rowIndex) =>
       row.map((cell, colIndex) =>
         initialBoard[rowIndex][colIndex] !== '' ? initialBoard[rowIndex][colIndex] : ''
@@ -290,6 +320,9 @@ export default function SudokuGame() {
                 status={status}
                 solveTime={solveTime}
                 algorithmUsed={algorithmUsed}
+                recursionBBCount={recursionBBCount}
+                emptyAssignmentsBBCount={emptyAssignmentsBBCount}
+                recursionBTCount={recursionBTCount}
               />
             </>
           )}
