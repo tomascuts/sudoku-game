@@ -2,6 +2,21 @@
 //inicializamos cada celda como vacia
 export const createEmptyBoard = () => Array(9).fill(null).map(() => Array(9).fill(''))
 
+const addRandomNumbersToBoard = (board, count) => {
+  let added = 0;
+  while (added < count) {
+    const row = Math.floor(Math.random() * 9);
+    const col = Math.floor(Math.random() * 9);
+    if (board[row][col] === '') {
+      const num = (Math.floor(Math.random() * 9) + 1).toString();
+      if (isValid(board, row, col, num)) {
+        board[row][col] = num;
+        added++;
+      }
+    }
+  }
+};
+
 //Verificamos si el numero puede ser colocado en la celda. 
 export const isValid = (board, row, col, num) => {
   for (let x = 0; x < 9; x++) {
@@ -25,18 +40,90 @@ export const isValid = (board, row, col, num) => {
   return true
 }
 
+const shuffle = (array) => {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+};
+
+const shuffleRowsAndColumns = (board) => {
+  // Barajar filas dentro de cada bloque 3x3
+  for (let block = 0; block < 3; block++) {
+    const rows = [block * 3, block * 3 + 1, block * 3 + 2];
+    shuffle(rows);
+    const tempBoard = [...board];
+    for (let i = 0; i < 3; i++) {
+      board[block * 3 + i] = tempBoard[rows[i]];
+    }
+  }
+
+  // Barajar columnas dentro de cada bloque 3x3
+  for (let block = 0; block < 3; block++) {
+    const cols = [block * 3, block * 3 + 1, block * 3 + 2];
+    shuffle(cols);
+    const tempBoard = board.map(row => [...row]);
+    for (let i = 0; i < 3; i++) {
+      for (let row = 0; row < 9; row++) {
+        board[row][block * 3 + i] = tempBoard[row][cols[i]];
+      }
+    }
+  }
+};
+
+
+export const createRandomSudokuBoard = (difficulty) => {
+  // Crear tablero vacío
+  let board = createEmptyBoard();
+
+  // Agregar algunos números aleatorios
+  addRandomNumbersToBoard(board, Math.floor(Math.random() * 10) + 5);
+
+  // Resolver el tablero
+  solveSudokuBranchAndBound(board, { setRecursionBBCount: () => {}, setEmptyAssignmentsBBCount: () => {} });
+
+  // Barajar filas y columnas
+  shuffleRowsAndColumns(board);
+
+  // Determinar la cantidad de celdas a rellenar según dificultad
+  const cellsToFill = {
+    easy: Math.floor(Math.random() * 16) + 35,
+    medium: Math.floor(Math.random() * 13) + 22,
+    hard: Math.floor(Math.random() * 12) + 10,
+  }[difficulty];
+
+  // Vaciar celdas aleatorias
+  const cellsToRemove = 81 - cellsToFill;
+  for (let i = 0; i < cellsToRemove; i++) {
+    let row, col;
+    do {
+      row = Math.floor(Math.random() * 9);
+      col = Math.floor(Math.random() * 9);
+    } while (board[row][col] === '');
+    board[row][col] = '';
+  }
+
+  return board;
+};
+
+
 
 //Usamos backtracking para resolver el sudoku. Reccorremos cada celda buscando celdas vacias.
 //Cuando encontramos una intentamos llenarlas con numeros del 1 al 9. Si el numero es valido lo coloca y vuelve a llamar a la funcion recursivamente.
 //Si no puede completarse, elimina el numero y continua probando con otro valor.
-export const solveSudoku = (board) => {
+export const solveSudoku = (board,counters = null) => {
+
+  if (counters) {
+    counters.setRecursionBTCount(counters.recursionBTCount++);
+  }
+
   for (let row = 0; row < 9; row++) {
     for (let col = 0; col < 9; col++) {
       if (board[row][col] === '') {
         for (let num = 1; num <= 9; num++) {
           if (isValid(board, row, col, num.toString())) {
             board[row][col] = num.toString()
-            if (solveSudoku(board)) {
+            if (solveSudoku(board,counters)) {
               return true
             }
             board[row][col] = ''
@@ -51,42 +138,60 @@ export const solveSudoku = (board) => {
   return true
 }
 
-//Usamos Branch&Bound para resolver el sudoku.
-//Buscamos una celda vacia usando findEmptyCell y obtenemos una lista de posibles valores para la celda con getPossibleValues.
+//Usamos Branch&Bound con una heuristica MRV (Minimun Remaining Value) para resolver el sudoku.
+//Heurística: Buscamos una celda vacia con menor numero de valores posibles usando findMostConstrainedEmptyCell y obtenemos una lista de posibles valores para la celda.
 //Si el valor actual permite continuar con el juego lo dejamos, sino borramos y probamos con el siguiente en la lista de posibles valores.
-export const solveSudokuBranchAndBound = (board) => {
-  const emptyCell = findEmptyCell(board)
-  if (!emptyCell) return true
+export const solveSudokuBranchAndBound = (board, counters = null) => {
 
-  const [row, col] = emptyCell
-  const possibleValues = getPossibleValues(board, row, col)
-
-  for (const num of possibleValues) {
-    board[row][col] = num
-    if (solveSudokuBranchAndBound(board)) {
-      return true
-    }
-    board[row][col] = ''
+  if (counters) {
+    counters.setRecursionBBCount(counters.recursionBBCount++);
   }
 
-  //Retornamos false si no tiene solucion.
-  return false
-}
+  // Busca la celda más restringida
+  const bestEmptyCell = findMostConstrainedEmptyCell(board);
+  if (!bestEmptyCell) return true; // Si no hay celdas vacías, hemos encontrado una solución
+
+  const [row, col] = bestEmptyCell;
+  const possibleValues = getPossibleValues(board, row, col);
+
+  // Poda: Si no hay valores posibles para la celda, este camino es inválido
+  if (possibleValues.length === 0) {
+    return false;
+  }
+
+  //Asignamos cada valor posible
+  for (const num of possibleValues) {
+    board[row][col] = num;
+    if (solveSudokuBranchAndBound(board, counters)) {
+      return true;
+    }
+    counters.setEmptyAssignmentsBBCount(counters.emptyAssignmentsBBCount++);
+    board[row][col] = ''; // Si no es exitoso revierte la celda
+  }
+
+  return false; // No se encontró solución
+};
 
 
 //Busca la primer celda vacia y devuelve su posicion i,j.
-const findEmptyCell = (board) => {
+const findMostConstrainedEmptyCell = (board) => {
+  let minOptions = 10;
+  let bestCell = null;
+
   for (let row = 0; row < 9; row++) {
     for (let col = 0; col < 9; col++) {
       if (board[row][col] === '') {
-        return [row, col]
+        const possibleValues = getPossibleValues(board, row, col);
+        if (possibleValues.length === 1) return [row, col];
+        if (possibleValues.length < minOptions) {
+          minOptions = possibleValues.length;
+          bestCell = [row, col];
+        }
       }
     }
   }
-
-  //Retornamos null si no hay celdas vacias (es decir, el tablero esta completo).
-  return null
-}
+  return bestCell;
+};
 
 //generamos valores posibles del 1 al 9 que podrian colocarse en una celda, respetando las reglas del juego 
 //(validaciones identicas al is valid)

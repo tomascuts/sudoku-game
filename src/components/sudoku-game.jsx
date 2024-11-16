@@ -5,8 +5,7 @@ import ControlPanel from './controlPanel'
 import DifficultySelector from './difficultySelector'
 import StatusMessage from './statusMessage'
 import CustomTemplateInput from './customTemplateInput'
-import { createEmptyBoard, solveSudoku, solveSudokuBranchAndBound, isValid } from './utils'
-
+import { createEmptyBoard, solveSudoku, solveSudokuBranchAndBound, isValid, createRandomSudokuBoard } from './utils'
 
 const theme = createTheme({
   palette: {
@@ -50,6 +49,11 @@ export default function SudokuGame() {
   const [algorithmUsed, setAlgorithmUsed] = useState(null)
   const [showCustomInput, setShowCustomInput] = useState(false)
 
+  //Counters
+  const [recursionBBCount, setRecursionBBCount] = useState(0)
+  const [recursionBTCount, setRecursionBTCount] = useState(0)
+  const [emptyAssignmentsBBCount, setEmptyAssignmentsBBCount] = useState(0)
+
   useEffect(() => {
     if (gameMode && gameMode !== 'custom') {
       newGame()
@@ -61,33 +65,20 @@ export default function SudokuGame() {
     }
   }, [gameMode, difficulty])
 
+  const counterHandlers = {
+    recursionBBCount,
+    setRecursionBBCount,
+    emptyAssignmentsBBCount,
+    setEmptyAssignmentsBBCount,
+    recursionBTCount,
+    setRecursionBTCount
+  };
+
   //Generamos un nuevo tablero segun la dificultad seleccionada o el tablero personalizado
+  
   const newGame = (customBoard = null) => {
-    let newBoard
-    
-    //tablero personalizado, clonamos ingresamos el custom donde se ingresaro los datos
-    if (customBoard && Array.isArray(customBoard) && customBoard.length === 9 && customBoard.every(row => Array.isArray(row) && row.length === 9)) {
-      newBoard = customBoard.map(row => [...row])
-    } else {
-      //Tablero nuevo segun dificultad, se resuelve y se vacian celdas al azar. Para que el tablero tenga coherencia
-      newBoard = createEmptyBoard()
-      solveSudoku(newBoard)
-      // Usamos la formula (Math.random() * (max - min) + min) para generar un numero aleatorio dentro del rango.
-      const cellsToFill = {
-        easy: Math.floor(Math.random() * 16) + 35,
-        medium: Math.floor(Math.random() * 13) + 22,
-        hard: Math.floor(Math.random() * 12) + 10,
-      }[difficulty]
-      const cellsToRemove = 81 - cellsToFill
-      for (let i = 0; i < cellsToRemove; i++) {
-        let row, col
-        do {
-          row = Math.floor(Math.random() * 9)
-          col = Math.floor(Math.random() * 9)
-        } while (newBoard[row][col] === '')
-        newBoard[row][col] = ''
-      }
-    }
+    let newBoard = createRandomSudokuBoard(difficulty);
+
     setBoard(newBoard)
     setInitialBoard(newBoard.map(row => [...row]))
     setStatus('')
@@ -141,18 +132,30 @@ export default function SudokuGame() {
     setStatus('Solución correcta!')
   }
 
+  const handleSolve = (algorithm,solvedBoard) => {
+    setRecursionBBCount(0);
+    setEmptyAssignmentsBBCount(0);
+    setRecursionBTCount(0);
+
+    let solved
+  
+    if (algorithm === 'backtracking') {
+      solved = solveSudoku(solvedBoard,counterHandlers)
+    } else {
+      solved = solveSudokuBranchAndBound(solvedBoard, counterHandlers)
+    }
+
+    return solved;
+  };
+
   // Resolvemos el sudoku segun el algoritmo seleccionado. (backtracking o branch & bound).
   const solvePuzzle = (algorithm) => {
-    const startTime = performance.now()
     const solvedBoard = board.map(row => [...row])
-    let solved
+    const startTime = performance.now()
 
     //Le pasamos una copia del tablero al algoritmo seleccionado para resolver el sudoku.
-    if (algorithm === 'backtracking') {
-      solved = solveSudoku(solvedBoard)
-    } else {
-      solved = solveSudokuBranchAndBound(solvedBoard)
-    }
+    let solved = handleSolve(algorithm,solvedBoard);
+   
     if (solved) {
       const endTime = performance.now()
       setBoard(solvedBoard)
@@ -191,6 +194,11 @@ export default function SudokuGame() {
 
   //Limpia la solucion, dejando solo el tablero con su template inicial.
   const clearSolution = () => {
+    setRecursionBBCount(0);
+    setEmptyAssignmentsBBCount(0);
+    setRecursionBTCount(0);
+
+
     const clearedBoard = board.map((row, rowIndex) =>
       row.map((cell, colIndex) =>
         initialBoard[rowIndex][colIndex] !== '' ? initialBoard[rowIndex][colIndex] : ''
@@ -290,6 +298,9 @@ export default function SudokuGame() {
                 status={status}
                 solveTime={solveTime}
                 algorithmUsed={algorithmUsed}
+                recursionBBCount={recursionBBCount}
+                emptyAssignmentsBBCount={emptyAssignmentsBBCount}
+                recursionBTCount={recursionBTCount}
               />
             </>
           )}
