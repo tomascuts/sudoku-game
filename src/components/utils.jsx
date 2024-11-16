@@ -46,37 +46,14 @@ const shuffle = (array) => {
   }
 };
 
-const shuffleFilasColumnas = (board) => {
-  for (let block = 0; block < 3; block++) {
-    const rows = [block * 3, block * 3 + 1, block * 3 + 2];
-    shuffle(rows);
-    const tableroTemp = [...board];
-    for (let i = 0; i < 3; i++) {
-      board[block * 3 + i] = tableroTemp[rows[i]];
-    }
-  }
-
-  for (let block = 0; block < 3; block++) {
-    const cols = [block * 3, block * 3 + 1, block * 3 + 2];
-    shuffle(cols);
-    const tableroTemp = board.map(row => [...row]);
-    for (let i = 0; i < 3; i++) {
-      for (let row = 0; row < 9; row++) {
-        board[row][block * 3 + i] = tableroTemp[row][cols[i]];
-      }
-    }
-  }
-};
-
 
 export const crearSudokuRandom = (dificultad) => {
   let board = cuadriculaVacia();
 
   agregarValoresRandom(board, Math.floor(Math.random() * 10) + 5);
 
+  // Resolver el tablero
   resolverSudokuBranchAndBound(board, { setRecursionBBCuenta: () => {}, setLugarVacioBBCuenta: () => {} });
-
-  shuffleFilasColumnas(board);
 
   
   const cellsToFill = {
