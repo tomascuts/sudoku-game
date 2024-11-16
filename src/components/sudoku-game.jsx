@@ -5,7 +5,7 @@ import ControlPanel from './controlPanel'
 import DifficultySelector from './difficultySelector'
 import StatusMessage from './statusMessage'
 import CustomTemplateInput from './customTemplateInput'
-import { createEmptyBoard, solveSudoku, solveSudokuBranchAndBound, isValid } from './utils'
+import { createEmptyBoard, solveSudoku, solveSudokuBranchAndBound, isValid, createRandomSudokuBoard } from './utils'
 
 const theme = createTheme({
   palette: {
@@ -75,32 +75,10 @@ export default function SudokuGame() {
   };
 
   //Generamos un nuevo tablero segun la dificultad seleccionada o el tablero personalizado
+  
   const newGame = (customBoard = null) => {
-    let newBoard
-    
-    //tablero personalizado, clonamos ingresamos el custom donde se ingresaro los datos
-    if (customBoard && Array.isArray(customBoard) && customBoard.length === 9 && customBoard.every(row => Array.isArray(row) && row.length === 9)) {
-      newBoard = customBoard.map(row => [...row])
-    } else {
-      //Tablero nuevo segun dificultad, se resuelve y se vacian celdas al azar. Para que el tablero tenga coherencia
-      newBoard = createEmptyBoard()
-      solveSudoku(newBoard)
-      // Usamos la formula (Math.random() * (max - min) + min) para generar un numero aleatorio dentro del rango.
-      const cellsToFill = {
-        easy: Math.floor(Math.random() * 16) + 35,
-        medium: Math.floor(Math.random() * 13) + 22,
-        hard: Math.floor(Math.random() * 12) + 10,
-      }[difficulty]
-      const cellsToRemove = 81 - cellsToFill
-      for (let i = 0; i < cellsToRemove; i++) {
-        let row, col
-        do {
-          row = Math.floor(Math.random() * 9)
-          col = Math.floor(Math.random() * 9)
-        } while (newBoard[row][col] === '')
-        newBoard[row][col] = ''
-      }
-    }
+    let newBoard = createRandomSudokuBoard(difficulty);
+
     setBoard(newBoard)
     setInitialBoard(newBoard.map(row => [...row]))
     setStatus('')

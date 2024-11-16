@@ -2,6 +2,21 @@
 //inicializamos cada celda como vacia
 export const createEmptyBoard = () => Array(9).fill(null).map(() => Array(9).fill(''))
 
+const addRandomNumbersToBoard = (board, count) => {
+  let added = 0;
+  while (added < count) {
+    const row = Math.floor(Math.random() * 9);
+    const col = Math.floor(Math.random() * 9);
+    if (board[row][col] === '') {
+      const num = (Math.floor(Math.random() * 9) + 1).toString();
+      if (isValid(board, row, col, num)) {
+        board[row][col] = num;
+        added++;
+      }
+    }
+  }
+};
+
 //Verificamos si el numero puede ser colocado en la celda. 
 export const isValid = (board, row, col, num) => {
   for (let x = 0; x < 9; x++) {
@@ -24,6 +39,73 @@ export const isValid = (board, row, col, num) => {
 
   return true
 }
+
+const shuffle = (array) => {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+};
+
+const shuffleRowsAndColumns = (board) => {
+  // Barajar filas dentro de cada bloque 3x3
+  for (let block = 0; block < 3; block++) {
+    const rows = [block * 3, block * 3 + 1, block * 3 + 2];
+    shuffle(rows);
+    const tempBoard = [...board];
+    for (let i = 0; i < 3; i++) {
+      board[block * 3 + i] = tempBoard[rows[i]];
+    }
+  }
+
+  // Barajar columnas dentro de cada bloque 3x3
+  for (let block = 0; block < 3; block++) {
+    const cols = [block * 3, block * 3 + 1, block * 3 + 2];
+    shuffle(cols);
+    const tempBoard = board.map(row => [...row]);
+    for (let i = 0; i < 3; i++) {
+      for (let row = 0; row < 9; row++) {
+        board[row][block * 3 + i] = tempBoard[row][cols[i]];
+      }
+    }
+  }
+};
+
+
+export const createRandomSudokuBoard = (difficulty) => {
+  // Crear tablero vacío
+  let board = createEmptyBoard();
+
+  // Agregar algunos números aleatorios
+  addRandomNumbersToBoard(board, Math.floor(Math.random() * 10) + 5);
+
+  // Resolver el tablero
+  solveSudokuBranchAndBound(board, { setRecursionBBCount: () => {}, setEmptyAssignmentsBBCount: () => {} });
+
+  // Barajar filas y columnas
+  shuffleRowsAndColumns(board);
+
+  // Determinar la cantidad de celdas a rellenar según dificultad
+  const cellsToFill = {
+    easy: Math.floor(Math.random() * 16) + 35,
+    medium: Math.floor(Math.random() * 13) + 22,
+    hard: Math.floor(Math.random() * 12) + 10,
+  }[difficulty];
+
+  // Vaciar celdas aleatorias
+  const cellsToRemove = 81 - cellsToFill;
+  for (let i = 0; i < cellsToRemove; i++) {
+    let row, col;
+    do {
+      row = Math.floor(Math.random() * 9);
+      col = Math.floor(Math.random() * 9);
+    } while (board[row][col] === '');
+    board[row][col] = '';
+  }
+
+  return board;
+};
+
 
 
 //Usamos backtracking para resolver el sudoku. Reccorremos cada celda buscando celdas vacias.
@@ -59,8 +141,11 @@ export const solveSudoku = (board,counters = null) => {
 //Usamos Branch&Bound con una heuristica MRV (Minimun Remaining Value) para resolver el sudoku.
 //Heurística: Buscamos una celda vacia con menor numero de valores posibles usando findMostConstrainedEmptyCell y obtenemos una lista de posibles valores para la celda.
 //Si el valor actual permite continuar con el juego lo dejamos, sino borramos y probamos con el siguiente en la lista de posibles valores.
-export const solveSudokuBranchAndBound = (board, counters) => {
-  counters.setRecursionBBCount(counters.recursionBBCount++);
+export const solveSudokuBranchAndBound = (board, counters = null) => {
+
+  if (counters) {
+    counters.setRecursionBBCount(counters.recursionBBCount++);
+  }
 
   // Busca la celda más restringida
   const bestEmptyCell = findMostConstrainedEmptyCell(board);
@@ -97,6 +182,7 @@ const findMostConstrainedEmptyCell = (board) => {
     for (let col = 0; col < 9; col++) {
       if (board[row][col] === '') {
         const possibleValues = getPossibleValues(board, row, col);
+        if (possibleValues.length === 1) return [row, col];
         if (possibleValues.length < minOptions) {
           minOptions = possibleValues.length;
           bestCell = [row, col];
