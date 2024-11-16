@@ -77,7 +77,13 @@ export default function SudokuGame() {
   //Generamos un nuevo tablero segun la dificultad seleccionada o el tablero personalizado
   
   const newGame = (customBoard = null) => {
-    let newBoard = createRandomSudokuBoard(difficulty);
+    let newBoard 
+
+    if (customBoard && Array.isArray(customBoard) && customBoard.length === 9 && customBoard.every(row => Array.isArray(row) && row.length === 9)) {
+      newBoard = customBoard.map(row => [...row])
+    } else {
+      newBoard = createRandomSudokuBoard(difficulty);
+    }
 
     setBoard(newBoard)
     setInitialBoard(newBoard.map(row => [...row]))
