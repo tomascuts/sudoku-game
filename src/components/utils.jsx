@@ -47,30 +47,6 @@ const shuffle = (array) => {
   }
 };
 
-const shuffleRowsAndColumns = (board) => {
-  // Barajar filas dentro de cada bloque 3x3
-  for (let block = 0; block < 3; block++) {
-    const rows = [block * 3, block * 3 + 1, block * 3 + 2];
-    shuffle(rows);
-    const tempBoard = [...board];
-    for (let i = 0; i < 3; i++) {
-      board[block * 3 + i] = tempBoard[rows[i]];
-    }
-  }
-
-  // Barajar columnas dentro de cada bloque 3x3
-  for (let block = 0; block < 3; block++) {
-    const cols = [block * 3, block * 3 + 1, block * 3 + 2];
-    shuffle(cols);
-    const tempBoard = board.map(row => [...row]);
-    for (let i = 0; i < 3; i++) {
-      for (let row = 0; row < 9; row++) {
-        board[row][block * 3 + i] = tempBoard[row][cols[i]];
-      }
-    }
-  }
-};
-
 
 export const createRandomSudokuBoard = (difficulty) => {
   // Crear tablero vacío
@@ -81,9 +57,6 @@ export const createRandomSudokuBoard = (difficulty) => {
 
   // Resolver el tablero
   solveSudokuBranchAndBound(board, { setRecursionBBCount: () => {}, setEmptyAssignmentsBBCount: () => {} });
-
-  // Barajar filas y columnas
-  shuffleRowsAndColumns(board);
 
   // Determinar la cantidad de celdas a rellenar según dificultad
   const cellsToFill = {
