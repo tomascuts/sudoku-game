@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react'
 import { Box, TextField, Button, Grid, Paper } from '@mui/material'
-import { isValid } from './utils'
+import { esValido } from './utils'
 
 export default function CustomTemplateInput({ onSubmit }) {
   const [board, setBoard] = useState(Array(9).fill().map(() => Array(9).fill('')))
@@ -12,8 +12,8 @@ export default function CustomTemplateInput({ onSubmit }) {
     for (let row = 0; row < 9; row++) {
       for (let col = 0; col < 9; col++) {
         if (newBoard[row][col] !== '') {
-          const isValidInput = isValid(newBoard, row, col, newBoard[row][col])
-          if (!isValidInput) {
+          const esValidoInput = esValido(newBoard, row, col, newBoard[row][col])
+          if (!esValidoInput) {
             newInvalidCells[`${row}-${col}`] = true
           }
         }

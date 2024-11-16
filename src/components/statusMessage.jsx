@@ -2,7 +2,7 @@ import {React} from 'react'
 import { Alert, Typography } from '@mui/material'
 
 
-export default function StatusMessage({ status, solveTime, algorithmUsed, recursionBBCount,recursionBTCount,emptyAssignmentsBBCount }) {
+export default function StatusMessage({ status, solveTime, algorithmUsed, recursionBBCount,recursionBTCount,casillasVaciasBBCuenta }) {
   if (!status) return null
 
   return (

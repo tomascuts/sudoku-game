@@ -5,7 +5,7 @@ import ControlPanel from './controlPanel'
 import DifficultySelector from './difficultySelector'
 import StatusMessage from './statusMessage'
 import CustomTemplateInput from './customTemplateInput'
-import { createEmptyBoard, solveSudoku, solveSudokuBranchAndBound, isValid, createRandomSudokuBoard } from './utils'
+import { cuadriculaVacia, resolverSudoku, resolverSudokuBranchAndBound, esValido, crearSudokuRandom } from './utils'
 
 const theme = createTheme({
   palette: {
@@ -38,10 +38,10 @@ const theme = createTheme({
 })
 
 export default function SudokuGame() {
-  const [board, setBoard] = useState(createEmptyBoard())
-  const [initialBoard, setInitialBoard] = useState(createEmptyBoard())
+  const [board, setBoard] = useState(cuadriculaVacia())
+  const [initialBoard, setInitialBoard] = useState(cuadriculaVacia())
   const [status, setStatus] = useState('')
-  const [difficulty, setDifficulty] = useState('medium')
+  const [dificultad, setDifficulty] = useState('medium')
   const [invalidCells, setInvalidCells] = useState({})
   const [gameMode, setGameMode] = useState(null)
   const [showGrid, setShowGrid] = useState(false)
@@ -49,10 +49,10 @@ export default function SudokuGame() {
   const [algorithmUsed, setAlgorithmUsed] = useState(null)
   const [showCustomInput, setShowCustomInput] = useState(false)
 
-  //Counters
-  const [recursionBBCount, setRecursionBBCount] = useState(0)
+  //contadores
+  const [recursionBBCount, setRecursionBBCuenta] = useState(0)
   const [recursionBTCount, setRecursionBTCount] = useState(0)
-  const [emptyAssignmentsBBCount, setEmptyAssignmentsBBCount] = useState(0)
+  const [casillasVaciasBBCuenta, setLugarVacioBBCuenta] = useState(0)
 
   useEffect(() => {
     if (gameMode && gameMode !== 'custom') {
@@ -63,13 +63,13 @@ export default function SudokuGame() {
       setShowCustomInput(true)
       setShowGrid(false)
     }
-  }, [gameMode, difficulty])
+  }, [gameMode, dificultad])
 
   const counterHandlers = {
     recursionBBCount,
-    setRecursionBBCount,
-    emptyAssignmentsBBCount,
-    setEmptyAssignmentsBBCount,
+    setRecursionBBCuenta,
+    casillasVaciasBBCuenta,
+    setLugarVacioBBCuenta,
     recursionBTCount,
     setRecursionBTCount
   };
@@ -77,7 +77,7 @@ export default function SudokuGame() {
   //Generamos un nuevo tablero segun la dificultad seleccionada o el tablero personalizado
   
   const newGame = (customBoard = null) => {
-    let newBoard = createRandomSudokuBoard(difficulty);
+    let newBoard = crearSudokuRandom(dificultad);
 
     setBoard(newBoard)
     setInitialBoard(newBoard.map(row => [...row]))
@@ -102,13 +102,13 @@ export default function SudokuGame() {
       if (value === '') {
         delete newInvalidCells[`${row}-${col}`]
       } else {
-        const isValidInput = isValid(newBoard, row, col, value)
-        newInvalidCells[`${row}-${col}`] = !isValidInput
+        const esValidoInput = esValido(newBoard, row, col, value)
+        newInvalidCells[`${row}-${col}`] = !esValidoInput
       }
-      //Recorremos filas y columnas verificando con el IsValid si es un valor correcto, caso contrario lo agregamos al InvalidCells state.
+      //Recorremos filas y columnas verificando con el esValido si es un valor correcto, caso contrario lo agregamos al InvalidCells state.
       for (let r = 0; r < 9; r++) {
         for (let c = 0; c < 9; c++) {
-          if (newBoard[r][c] !== '' && !isValid(newBoard, r, c, newBoard[r][c])) {
+          if (newBoard[r][c] !== '' && !esValido(newBoard, r, c, newBoard[r][c])) {
             newInvalidCells[`${r}-${c}`] = true
           } else if (newInvalidCells[`${r}-${c}`]) {
             delete newInvalidCells[`${r}-${c}`]
@@ -123,7 +123,7 @@ export default function SudokuGame() {
   const checkSolution = () => {
     for (let row = 0; row < 9; row++) {
       for (let col = 0; col < 9; col++) {
-        if (board[row][col] === '' || !isValid(board, row, col, board[row][col])) {
+        if (board[row][col] === '' || !esValido(board, row, col, board[row][col])) {
           setStatus('Solución incorrecta')
           return
         }
@@ -133,16 +133,16 @@ export default function SudokuGame() {
   }
 
   const handleSolve = (algorithm,solvedBoard) => {
-    setRecursionBBCount(0);
-    setEmptyAssignmentsBBCount(0);
+    setRecursionBBCuenta(0);
+    setLugarVacioBBCuenta(0);
     setRecursionBTCount(0);
 
     let solved
   
     if (algorithm === 'backtracking') {
-      solved = solveSudoku(solvedBoard,counterHandlers)
+      solved = resolverSudoku(solvedBoard,counterHandlers)
     } else {
-      solved = solveSudokuBranchAndBound(solvedBoard, counterHandlers)
+      solved = resolverSudokuBranchAndBound(solvedBoard, counterHandlers)
     }
 
     return solved;
@@ -194,8 +194,8 @@ export default function SudokuGame() {
 
   //Limpia la solucion, dejando solo el tablero con su template inicial.
   const clearSolution = () => {
-    setRecursionBBCount(0);
-    setEmptyAssignmentsBBCount(0);
+    setRecursionBBCuenta(0);
+    setLugarVacioBBCuenta(0);
     setRecursionBTCount(0);
 
 
@@ -265,16 +265,16 @@ export default function SudokuGame() {
                   {gameMode === "custom"
                     ? "Template personalizado"
                     : `Dificultad: ${
-                        difficulty === "easy"
+                        dificultad === "facil"
                           ? "Fácil"
-                          : difficulty === "medium"
+                          : dificultad === "medium"
                           ? "Media"
                           : "Difícil"
                       }
                     (${
-                      difficulty === "easy"
+                      dificultad === "facil"
                         ? "35-50"
-                        : difficulty === "medium"
+                        : dificultad === "medium"
                         ? "22-34"
                         : "10-21"
                     } números iniciales)`}
@@ -299,7 +299,7 @@ export default function SudokuGame() {
                 solveTime={solveTime}
                 algorithmUsed={algorithmUsed}
                 recursionBBCount={recursionBBCount}
-                emptyAssignmentsBBCount={emptyAssignmentsBBCount}
+                casillasVaciasBBCuenta={casillasVaciasBBCuenta}
                 recursionBTCount={recursionBTCount}
               />
             </>

@@ -12,9 +12,9 @@ export default function DifficultySelector({ gameMode, onGameModeChange, onStart
           value={gameMode}
           onChange={(e) => onGameModeChange(e.target.value)}
         >
-          <FormControlLabel value="play-easy" control={<Radio />} label="Jugar nuevo juego (Fácil)" />
+          <FormControlLabel value="play-facil" control={<Radio />} label="Jugar nuevo juego (Fácil)" />
           <FormControlLabel value="play-medium" control={<Radio />} label="Jugar nuevo juego (Medio)" />
-          <FormControlLabel value="play-hard" control={<Radio />} label="Jugar nuevo juego (Difícil)" />
+          <FormControlLabel value="play-dificil" control={<Radio />} label="Jugar nuevo juego (Difícil)" />
           <FormControlLabel value="custom" control={<Radio />} label="Crear template personalizado" />
         </RadioGroup>
       </FormControl>
